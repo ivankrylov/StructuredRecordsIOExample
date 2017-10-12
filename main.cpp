@@ -23,9 +23,12 @@ namespace StructuredRecords {
 
         template<class T>
         static void RegisterItemTypes(Record_Types record_type, std::string record_name) {
+
+            // Register factory methods
             _factories_from_types[record_type] = &itemFactory<T>;
             _factories_from_names[record_name] = &itemFactory<T>;
 
+            // Record type and type_names in the corresponding static fields
             T* temp_element = (T*) (itemFactory<T>());
             temp_element->_record_type = record_type;
             temp_element->_record_name = record_name;
@@ -34,6 +37,8 @@ namespace StructuredRecords {
 
         static Base_Record_Class* getItemFactory(Record_Types type) {
             std::map<Record_Types, FactoryFunctor>::iterator C = _factories_from_types.find(type);
+
+            // This needs better error handling
             if (C == _factories_from_types.end())
                 return nullptr;
             return C->second();
@@ -53,6 +58,7 @@ namespace StructuredRecords {
     private:
         template<class T>
         static Base_Record_Class* itemFactory() {
+            // This needs support for arenas
             Base_Record_Class* result = new T();
             return result;
         }
@@ -71,14 +77,12 @@ namespace StructuredRecords {
         static Record_Types _record_type;
         static std::string _record_name;
 
-        Car_Record_Class* set_make(std::string make) {
+        Car_Record_Class* set_properties(std::string make, int year) {
             _make = make;
-            return this;
-        }
-        Car_Record_Class* set_year(int year) {
             _year = year;
             return this;
         }
+
         friend std::ostream& operator<< (std::ostream &stream, const Car_Record_Class *item) {
             stream << "Type of item: " << (int) item->_record_type << " make:" << item->_make << " year:" << item->_year;
             return stream;
@@ -92,11 +96,8 @@ namespace StructuredRecords {
         static Record_Types _record_type;
         static std::string _record_name;
 
-        Fruit_Record_Class* set_name(std::string name) {
+        Fruit_Record_Class* set_properties(std::string name, std::string color) {
             _name = name;
-            return this;
-        }
-        Fruit_Record_Class* set_color(std::string color) {
             _color = color;
             return this;
         }
@@ -125,14 +126,21 @@ int main() {
 
     std::cout << "Hello, World!" << std::endl;
 
+    // Register Record kinds with the factory
     baseClass.RegisterItemTypes<Car_Record_Class>(Record_Types::Car_Type, Record_Type_Names::Car_Str);
     baseClass.RegisterItemTypes<Fruit_Record_Class>(Record_Types::Fruit_Type, Record_Type_Names::Fruit_Str);
 
-    Car_Record_Class* car1 = ((Car_Record_Class*)(baseClass.getItemFactory(Record_Types::Car_Type)))->set_make("BMW")->set_year(2017);
-    Car_Record_Class* car2 = ((Car_Record_Class*)(baseClass.getItemFactory(Record_Types::Car_Type)))->set_make("Mercedes")->set_year(2016);
 
-    Fruit_Record_Class* fruit1 = ((Fruit_Record_Class*)(baseClass.getItemFactory(Record_Types::Fruit_Type)))->set_name("banana")->set_color("yellow");
-    Fruit_Record_Class* fruit2 = ((Fruit_Record_Class*)(baseClass.getItemFactory(Record_Types::Fruit_Type)))->set_name("apple")->set_color("green");
+    // Create a few records of various types
+    Car_Record_Class* car1 =
+            ((Car_Record_Class*)(baseClass.getItemFactory(Record_Types::Car_Type)))->set_properties("BMW", 2017);
+    Car_Record_Class* car2 =
+            ((Car_Record_Class*)(baseClass.getItemFactory(Record_Types::Car_Type)))->set_properties("Mercedes",2016);
+
+    Fruit_Record_Class* fruit1 =
+            ((Fruit_Record_Class*)(baseClass.getItemFactory(Record_Types::Fruit_Type)))->set_properties("banana", "yellow");
+    Fruit_Record_Class* fruit2 =
+            ((Fruit_Record_Class*)(baseClass.getItemFactory(Record_Types::Fruit_Type)))->set_properties("apple", "green");
 
     std::cout << car1 << std::endl;
     std::cout << car2 << std::endl;
